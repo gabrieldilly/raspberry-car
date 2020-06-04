@@ -14,7 +14,7 @@ class SingleMotionDetector:
 	def update(self, image):
 		# if the background model is None, initialize it
 		if self.bg is None:
-			self.bg = image.copy().astype("float")
+			self.bg = image.copy().astype('float')
 			return
 
 		# update the background model by accumulating the weighted
@@ -24,7 +24,7 @@ class SingleMotionDetector:
 	def detect(self, image, tVal=25):
 		# compute the absolute difference between the background model
 		# and the image passed in, then threshold the delta image
-		delta = cv2.absdiff(self.bg.astype("uint8"), image)
+		delta = cv2.absdiff(self.bg.astype('uint8'), image)
 		thresh = cv2.threshold(delta, tVal, 255, cv2.THRESH_BINARY)[1]
 
 		# perform a series of erosions and dilations to remove small
@@ -34,8 +34,7 @@ class SingleMotionDetector:
 
 		# find contours in the thresholded image and initialize the
 		# minimum and maximum bounding box regions for motion
-		cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-			cv2.CHAIN_APPROX_SIMPLE)
+		cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 		cnts = imutils.grab_contours(cnts)
 		(minX, minY) = (np.inf, np.inf)
 		(maxX, maxY) = (-np.inf, -np.inf)
