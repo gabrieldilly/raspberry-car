@@ -55,8 +55,8 @@ def detect_motion(frameCount):
 
 		# grab the current timestamp and draw it on the frame
 		timestamp = datetime.datetime.now()
-		cv2.putText(frame, timestamp.strftime('%A %d %B %Y %I:%M:%S%p'), (10,
-		            frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
+		cv2.putText(frame, timestamp.strftime('%A %d %B %Y %I:%M:%S%p'), (10, frame.shape[0] - 10), 
+					cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
 
 		# if the total number of frames has reached a sufficient
 		# number to construct a reasonable background model, then
@@ -145,14 +145,13 @@ def audio():
     def sound():
         FORMAT = pyaudio.paInt16
         CHANNELS = 2
-        RATE = 44100
-        CHUNK = 1024
-        sampleRate = 44100
-        bitsPerSample = 16
-        channels = 2
-        wav_header = genHeader(sampleRate, bitsPerSample, channels)
+        SAMPLE_RATE = 48000
+        BITS_PER_SAMPLE = 16
+        CHUNK = 512
 
-        stream = audio1.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, input_device_index=1, frames_per_buffer=CHUNK)
+        wav_header = genHeader(SAMPLE_RATE, BITS_PER_SAMPLE, CHANNELS)
+
+        stream = audio1.open(format=FORMAT, channels=CHANNELS, rate=SAMPLE_RATE, input=True, input_device_index=1, frames_per_buffer=CHUNK)
         print('recording...')
         first_run = True
         while True:

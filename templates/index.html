@@ -5,17 +5,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <title>Raspberry Pi Remote Car</title>
+  <script>
+    $(document).ready(async function () {
+      //$('#myAudio').click();
+      //setTimeout(() => {
+      //  document.getElementById('myAudio').play(); 
+      //}, 200);
+    });
+    /*$('#unmuteButton').click(() => {
+      $('#myAudio').attr('muted', false);
+    });*/
+  </script>
 </head>
 
 <body>
   <h1>Raspberry Pi Remote Car</h1>
   <img src="{{ url_for('video_feed') }}">
   <br>
-  <audio controls>
+  <audio id="myAudio" controls autoplay>
     <source src="{{ url_for('audio') }}" type="audio/x-wav;codec=pcm">
     Your browser does not support the audio element.
   </audio>
+  <!-- <button id="unmuteButton">Sound</button> -->
 </body>
 
 </html>
