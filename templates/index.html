@@ -1,9 +1,21 @@
+<!DOCTYPE html>
 <html>
-  <head>
-    <title>Pi Video Surveillance</title>
-  </head>
-  <body>
-    <h1>Pi Video Surveillance</h1>
-    <img src="{{ url_for('video_feed') }}">
-  </body>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Raspberry Pi Remote Car</title>
+</head>
+
+<body>
+  <h1>Raspberry Pi Remote Car</h1>
+  <img src="{{ url_for('video_feed') }}">
+  <br>
+  <audio controls>
+    <source src="{{ url_for('audio') }}" type="audio/x-wav;codec=pcm">
+    Your browser does not support the audio element.
+  </audio>
+</body>
+
 </html>

@@ -4,30 +4,30 @@
 # import the necessary packages
 from pyimagesearch.motion_detection import SingleMotionDetector
 from imutils.video import VideoStream
-from flask import Response
-from flask import Flask
-from flask import render_template
+from flask import Flask, Response, render_template
 import threading
 import argparse
 import datetime
 import imutils
+import pyaudio
 import time
 import cv2
 
-# initialize the output frame and a lock used to ensure thread-safe
-# exchanges of the output frames (useful for multiple browsers/tabs
-# are viewing tthe stream)
+# initialize the output frame and a lock used to ensure thread-safe exchanges of the output frames (useful for multiple browsers/tabs are viewing tthe stream)
 outputFrame = None
 lock = threading.Lock()
 
 # initialize a flask object
 app = Flask(__name__)
 
-# initialize the video stream and allow the camera sensor to
-# warmup
-#vs = VideoStream(usePiCamera=1).start()
+# initialize the video stream and allow the camera sensor to warmup
+# vs = VideoStream(usePiCamera=1).start()
 vs = VideoStream(src=0).start()
 time.sleep(2.0)
+
+# initialize the audio stream
+audio1 = pyaudio.PyAudio()
+
 
 @app.route('/')
 def index():
@@ -55,7 +55,8 @@ def detect_motion(frameCount):
 
 		# grab the current timestamp and draw it on the frame
 		timestamp = datetime.datetime.now()
-		cv2.putText(frame, timestamp.strftime('%A %d %B %Y %I:%M:%S%p'), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
+		cv2.putText(frame, timestamp.strftime('%A %d %B %Y %I:%M:%S%p'), (10,
+		            frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
 
 		# if the total number of frames has reached a sufficient
 		# number to construct a reasonable background model, then
@@ -70,7 +71,7 @@ def detect_motion(frameCount):
 				# "motion area" on the output frame
 				(thresh, (minX, minY, maxX, maxY)) = motion
 				cv2.rectangle(frame, (minX, minY), (maxX, maxY), (0, 0, 255), 2)
-		
+
 		# update the background model and increment the total number
 		# of frames read thus far
 		md.update(gray)
@@ -80,7 +81,7 @@ def detect_motion(frameCount):
 		# lock
 		with lock:
 			outputFrame = frame.copy()
-		
+
 def generate():
 	# grab global references to the output frame and lock variables
 	global outputFrame, lock
@@ -89,8 +90,7 @@ def generate():
 	while True:
 		# wait until the lock is acquired
 		with lock:
-			# check if the output frame is available, otherwise skip
-			# the iteration of the loop
+			# check if the output frame is available, otherwise skipthe iteration of the loop
 			if outputFrame is None:
 				continue
 
@@ -104,12 +104,67 @@ def generate():
 		# yield the output frame in the byte format
 		yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encodedImage) + b'\r\n')
 
+def genHeader(sampleRate, bitsPerSample, channels):
+    datasize = 2000*10**6
+    # (4byte) Marks file as RIFF
+    o = bytes('RIFF', 'ascii')
+    # (4byte) File size in bytes excluding this and RIFF marker
+    o += (datasize + 36).to_bytes(4, 'little')
+    # (4byte) File type
+    o += bytes('WAVE', 'ascii')
+    # (4byte) Format Chunk Marker
+    o += bytes('fmt ', 'ascii')
+    # (4byte) Length of above format data
+    o += (16).to_bytes(4, 'little')
+    # (2byte) Format type (1 - PCM)
+    o += (1).to_bytes(2, 'little')
+    # (2byte)
+    o += (channels).to_bytes(2, 'little')
+    # (4byte)
+    o += (sampleRate).to_bytes(4, 'little')
+    o += (sampleRate * channels * bitsPerSample //
+          8).to_bytes(4, 'little')  # (4byte)
+    o += (channels * bitsPerSample // 8).to_bytes(2,
+          'little')               # (2byte)
+    # (2byte)
+    o += (bitsPerSample).to_bytes(2, 'little')
+    # (4byte) Data Chunk Marker
+    o += bytes('data', 'ascii')
+    # (4byte) Data size in bytes
+    o += (datasize).to_bytes(4, 'little')
+    return o
+
 @app.route('/video_feed')
 def video_feed():
-	# return the response generated along with the specific media
-	# type (mime type)
-	return Response(generate(),
-		mimetype = 'multipart/x-mixed-replace; boundary=frame')
+	# return the response generated along with the specific media type (mime type)
+	return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/audio')
+def audio():
+    # start recording
+    def sound():
+        FORMAT = pyaudio.paInt16
+        CHANNELS = 2
+        RATE = 44100
+        CHUNK = 1024
+        sampleRate = 44100
+        bitsPerSample = 16
+        channels = 2
+        wav_header = genHeader(sampleRate, bitsPerSample, channels)
+
+        stream = audio1.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, input_device_index=1, frames_per_buffer=CHUNK)
+        print('recording...')
+        first_run = True
+        while True:
+           if first_run:
+               data = wav_header + stream.read(CHUNK)
+               first_run = False
+           else:
+               data = stream.read(CHUNK)
+           yield(data)
+
+    return Response(sound())
+
 
 # check to see if this is the main thread of execution
 if __name__ == '__main__':
